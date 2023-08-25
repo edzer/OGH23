@@ -1,0 +1,121 @@
+---
+title: "API 101"
+author: "Edzer Pebesma"
+date: "Aug 23, 2023"
+---
+
+# Why API 101?
+
+There is a lot of talking about APIs. What is it?
+
+* API stands for Application Programming Interface. This is completely generic.
+* Any software consists of functions (or methods) that do something. What they do is explained
+  in the documentation. If the documentation and the implementation are not in correspondence,
+  then we call it a bug (in either the function or the documentation, or both)
+* Defining an API means: 
+    * defining how the function is executed:
+        * choosing a name for the function, 
+        * choosing names for input arguments, and defining what they should be (their type)
+        * the calling protocol (e.g. GET or POST)
+    * what the function shall do (usually: what it returns)
+    * writing this down
+* Implementing an API means writing working code that adheres to the defined API
+
+An API may be as simple as an R function:
+
+```{r}
+add_three = function(a, b, c) {
+	stopifnot(is.numeric(a), is.numeric(b), is.numeric(c))
+	a + b + c
+}
+add_three(4, 5, 6)
+```
+R is a weakly typed language, so the function definition does not
+prescribe which type `a`, `b` and `c` shall have, therefore we can /
+need to check their type inside the function.
+
+# Web APIs
+
+Web APIs define how the web works: when we click something in a web page a URL is sent to a web server, and a response is given; the browser reacts to that response.
+
+Web APIs can be easily create by either R or Python.
+
+## By R
+
+Using package [plumber](https://www.rplumber.io/), we can create an API definition as follows:
+
+```
+# plumber.R
+
+#* Echo back the input
+#* @param msg The message to echo
+#* @get /echo
+function(msg="") {
+  list(msg = paste0("The message is: '", msg, "'"))
+}
+
+#* Plot a histogram
+#* @serializer png
+#* @get /plot
+function() {
+  rand <- rnorm(100)
+  hist(rand)
+}
+
+#* Return the sum of two numbers
+#* @param a The first number to add
+#* @param b The second number to add
+#* @post /sum
+function(a, b) {
+  as.numeric(a) + as.numeric(b)
+}
+```
+and run this by
+```{r eval=FALSE}
+pr("plumber.R") |> pr_run(port=8000)
+```
+When doing this, we see
+```
+Running plumber API at http://127.0.0.1:8000
+Running swagger Docs at http://127.0.0.1:8000/__docs__/
+```
+indicating 
+
+* where the service is running
+* where their documentation is found
+
+[ do it; show; try GET on the POST, curl --data POST ]
+
+## By Python
+
+A possibility to create a web service with Python is using Flask; 
+save the following
+
+```
+from flask import Flask
+
+app = Flask(__name__)
+
+@app.route("/")
+def hello_world():
+    return "<p>Hello, World!</p>"
+```
+to `hello.py`, and run
+```
+export FLASK_APP=hello.py
+flask run
+```
+this then prints:
+```
+ * Serving Flask app 'hello.py' (lazy loading)
+ * Environment: production
+   WARNING: This is a development server. Do not use it in a production deployment.
+   Use a production WSGI server instead.
+ * Debug mode: off
+ * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
+```
+and on that web address we can interact with the web service:
+
+* `curl  http://127.0.0.1:5000/` prints `<p>Hello, World!</p>`
+* opening the address `http://127.0.0.1:5000/` in a web browser shows the html 
+
