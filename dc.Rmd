@@ -1,0 +1,13 @@
+---
+title: "Raster and vector data cubes in R"
+author: "Edzer Pebesma"
+date: "Aug 23, 2023"
+---
+
+Recall [tidy data](https://www.jstatsoft.org/article/view/v059i10):
+_each variable is a column, each observation is a row, and each
+type of observational unit is a table._
+
+```{r}
+head(mtcars)
+```
