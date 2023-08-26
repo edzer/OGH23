@@ -11,3 +11,88 @@ type of observational unit is a table._
 ```{r}
 head(mtcars)
 ```
+
+
+* everything you can do with arrays, you can do with tables; not vice versa
+* if you use arrays, you have the advantage of:
+	* guarantee of complete data: "empty" fields are filled with 0 (count) or NA (continuous)
+    * need to take care of completeness
+	* arrays have a continous memory layout, hence indexes are for free: we "know" where each data value is
+    * for larger datasets: they form an easy and useful abstraction
+    * array operations are a powerful and comprehensive means to design and communicate analysis
+
+
+* From non-dc datasets, create one; examples FMD, hurricanes, OD
+* From a raster dc, create a vector datacube: sample points, aggregate over countries (example aggregate over lines: combined exposure)
+* show tables with ST data: space-wide, time-wide, long
+
+
+# Datacube datasets stored in tables:
+
+## long table:
+
+Each record (row) reflects a unique combination of space (state) and time (year):
+
+```{r}
+data(Produc, package = "plm")
+head(Produc)
+nrow(Produc)
+length(unique(Produc$state)) * length(unique(Produc$year))
+# but do we acually have all combinations?
+with(Produc, length(unique(paste(state, year, sep = ":"))))
+```
+
+## space-wide table:
+
+different records (rows) correspond to different times, columns to different locations:
+```{r}
+data(wind, package = "gstat")
+head(wind)
+```
+
+## time-wide table:
+
+Different records (rows) correspond to different locations, columns to different times (xxx74: xxx for 1974; xxx79: xxx for 1979)
+```{r}
+library(sf)
+system.file("gpkg/nc.gpkg", package="sf") |> read_sf() -> nc
+head(nc)
+```
+
+# Creating datacubes from non-datacube data
+
+## Foot-and-mouth disease cases
+
+```{r}
+data(fmd, package = 'stpp')
+head(fmd)
+data("northcumbria", package = 'stpp')
+fmd.sf = st_as_sf(as.data.frame(fmd), coords = c('X', 'Y'))
+n = nrow(northcumbria)
+nh = st_sfc(st_polygon(list(northcumbria[c(1:n,1),])))
+plot(fmd.sf, pch = 16, reset = FALSE, extent = nh, breaks = "quantile")
+plot(nh, add = TRUE)
+```
+
+Create an empty datacube covering the space-time area:
+```{r}
+library(stars)
+st = st_as_stars(nh, nx = 10, ny = 10)
+plot(st, reset = FALSE)
+plot(nh, add = TRUE, border = 'green')
+a = aggregate(fmd.sf, st_as_sf(st), FUN = length)
+plot(a, main = "# of cases", reset = FALSE)
+plot(fmd.sf, add = TRUE, col = 'grey')
+plot(nh, border = 'green', add = TRUE)
+```
+
+See https://www.jstatsoft.org/article/view/v053i02 for a more elaborate
+approach to model these data statistically.
+
+## Hurricanes
+
+See [hurricanes.Rmd](https://github.com/edzer/OGH23/hurdat.Rmd), [output](hurdat.html)
+
+## OD
+
+See example in SDS: https://r-spatial.org/book/07-Introsf.html#sec-oddc
