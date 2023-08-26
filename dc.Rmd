@@ -96,3 +96,39 @@ See [hurricanes.Rmd](https://github.com/edzer/OGH23/hurdat.Rmd), [output](hurdat
 ## OD
 
 See example in SDS: https://r-spatial.org/book/07-Introsf.html#sec-oddc
+
+
+# Vector data cubes from raster data cubes
+
+Consider the following temperature reanalysis data, taken from [this file](https://psl.noaa.gov/repository/entry/show/PSD+Climate+Data+Repository/Public/PSD+Datasets/PSD+Gridded+Datasets/ncep.reanalysis2.derived/gaussian_grid/skt.sfc.mon.mean.nc?entryid=synth%3Ae570c8f9-ec09-4e89-93b4-babd5651e7a9%3AL25jZXAucmVhbmFseXNpczIuZGVyaXZlZC9nYXVzc2lhbl9ncmlkL3NrdC5zZmMubW9uLm1lYW4ubmM%3D&output=default.html).
+
+We 
+```{r}
+library(stars)
+read_stars('skt.sfc.mon.mean.nc') # GDAL RasterLayer
+read_mdim('skt.sfc.mon.mean.nc')  # GDAL Multidimensional Array API
+```
+
+Sampling this at two locations:
+```{r}
+skt = read_stars('skt.sfc.mon.mean.nc')
+st_crs(skt) = 'OGC:CRS84'
+pts = st_sfc(st_point(c(7, 52)), st_point(c(16.9, 52)), crs = st_crs(skt))
+e = st_extract(skt, pts)
+library(xts)
+plot(as.xts(e))
+```
+
+Computing the means over three countries:
+
+```{r}
+ne = rnaturalearth::ne_countries(returnclass = "sf")
+library(dplyr)
+sel = c("PL", "DE", "ES")
+ne |> filter(iso_a2 %in% sel) -> ne3
+aggregate(skt, ne3, FUN=mean, na.rm = TRUE) |>
+  aggregate(by = "year", FUN=mean, na.rm = TRUE) |>
+  as.xts() -> a3.xts
+colnames(a3.xts) = sel
+plot(a3.xts, legend.loc = "top")
+```
