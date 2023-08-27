@@ -2,7 +2,81 @@
 title: "Raster and vector data cubes in R"
 author: "Edzer Pebesma"
 date: "Aug 23, 2023"
+output:
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+    toc_depth: 2
 ---
+
+# Phenomena: spatially discreet or continuous?
+
+[Stevens' 1946 "On the Theory of Scales of
+Measurement"](https://www.science.org/doi/10.1126/science.103.2684.677)
+says there are four measurement scales: nominal, ordinal, interval
+and ratio. We can simplify that to discrete (nominal, ordinal) and
+continuous (interval, ratio). Are the phenomena we study discreet or
+continuous?
+
+We think of our phenomenon as $Z(s)$, property $Z$ is measured on object
+$s_i$ or at location $s$.  For making progress, we need to
+distinguish here whether we talk about
+
+* (non-spatial) properties of objects or locations: $Z$
+    * your blood pressure and temperature are two continuous variables on a discrete object (you)
+    * your DNA (or at least, the presence of a specific gene) is discrete
+* spatial continuity or discreteness: $s$
+    * body temperature is continuous within your body, but does not extend it; average body temperature is a property of a spatially discrete entity
+    * air temperature is continuous through the air, and is spatially continuous (in $s$), as well as a continuous property (in $Z$)
+    * soil type or land use type is continuous in space $s$, but discrete in value $Z$
+
+In space-time we have for instance:
+    * temperature is continuous in space, time and property
+    * being infected with disease $x$ is discrete in space (e.g., a person) but continuous in time.
+    * a remote sensing image is (semi-) continuous in space $s$ and value $Z$ (energy) but the _observation_ is discrete in time (snapshot); the energy phenomena is continuous in time
+
+We often associate
+
+* ***vector data*** with _spatially_ discrete phenomena ("features")
+* ***raster data*** with _spatially_ continuous phenomena (fields, coverages)
+
+but this is often not right, e.g.  POINTs can
+
+* reflect locations of things (trees, persons, cars)
+* locations for _measurements_ of spatially continuous phenomena (air temperature, air quality)
+
+LINESTRINGs can
+
+* reflect roads, railways or borders
+* reflect contour lines, which are discretely sampled representations of a spatially continuous elevation
+
+POLYGONs can
+
+* reflect administrative regions, voting districts or forest stands
+* reflect the boundaries of of a spatially continuous discrete variable like land use or soil type
+
+Linestring and polygon geometries are collections of points, and attributes associated with the geometry can be
+associated either with
+
+* all of the points (1 value: population count, population density, size or length)
+* each of the points (soil type, land use, contour line elevation)
+
+We say for the first relation that the attribute has
+_block support_, and for the second that it has _point
+support_, following the geostatistical literature. [Further
+reading](https://r-spatial.org/book/05-Attributes.html).
+
+Getting this wrong, e.g. when downscaling polygons, may be a source
+of gross error in subsequent analysis. Before you analyse data,
+it makes a lot of sense to not only consider the measurement scale
+of your attribute $Z$, but also whether it is spatially continuous
+or discrete ($s$). If it is discrete, counting, sums and spatial
+densities make sense, if it is continuous averaging and interpolation
+(prediction over continuous space) make sense.
+
+# Tidy data?
 
 Recall [tidy data](https://www.jstatsoft.org/article/view/v059i10):
 _each variable is a column, each observation is a row, and each
@@ -12,20 +86,41 @@ type of observational unit is a table._
 head(mtcars)
 ```
 
+`sf` and `geopandas` objects belong to this category.
 
-* everything you can do with arrays, you can do with tables; not vice versa
-* if you use arrays, you have the advantage of:
-	* guarantee of complete data: "empty" fields are filled with 0 (count) or NA (continuous)
-    * need to take care of completeness
-	* arrays have a continous memory layout, hence indexes are for free: we "know" where each data value is
-    * for larger datasets: they form an easy and useful abstraction
-    * array operations are a powerful and comprehensive means to design and communicate analysis
+## Enter raster data and data cubes
+
+[See here](https://r-spatial.org/book/06-Cubes.html)
+
+## Limits of tables
+
+For raster data, we can, obviously, put things in tables, in
+different ways
+
+```{r}
+library(stars)
+L7_ETMs |> as.data.frame() |> head()
+L7_ETMs |> st_as_sf(long = TRUE, as_points = TRUE) |> head()
+L7_ETMs |> st_as_sf(as_points = TRUE) |> head()
+L7_ETMs |> st_as_sf(as_points = FALSE) |> head()
+```
+
+In principle, everything you can do with arrays, you can do with
+tables; not vice versa. Why then would you work with arrays?
+
+## Why/when would you stick to arrays?
+
+If you use arrays, you have the advantage of:
+	* guarantee of complete data: "empty" fields are filled with 0 (count) or NA (continuous, or nominal)
+    * there is no need to take care of completeness, data are complete by construction
+	* in-memory arrays have a continous memory layout, hence indexes are for free: we "know" where each data value is ("[geotransform](https://r-spatial.org/book/06-Cubes.html#regular-dimensions-gdals-geotransform)")
+    * for larger datasets: arrays form an easy and useful abstraction
+    * array [_operations_](https://r-spatial.org/book/06-Cubes.html#sec-dcoperations) are a powerful and comprehensive means to design and communicate analysis, and are much harder to carry out with tables
 
 
-* From non-dc datasets, create one; examples FMD, hurricanes, OD
-* From a raster dc, create a vector datacube: sample points, aggregate over countries (example aggregate over lines: combined exposure)
-* show tables with ST data: space-wide, time-wide, long
-
+```{r}
+stars:::get_geotransform(L7_ETMs)
+```
 
 # Datacube datasets stored in tables:
 
@@ -116,7 +211,9 @@ st_crs(skt) = 'OGC:CRS84'
 pts = st_sfc(st_point(c(7, 52)), st_point(c(16.9, 52)), crs = st_crs(skt))
 e = st_extract(skt, pts)
 library(xts)
-plot(as.xts(e))
+e.xts = as.xts(e)
+colnames(e.xts) = c("Muenster", "Poznan")
+plot(e.xts, legend.loc = "top")
 ```
 
 Computing the means over three countries:
