@@ -13,12 +13,15 @@ output:
 
 # Phenomena: spatially discreet or continuous?
 
+A bit of theory.
+
 [Stevens' 1946 "On the Theory of Scales of
 Measurement"](https://www.science.org/doi/10.1126/science.103.2684.677)
 says there are four measurement scales: nominal, ordinal, interval
-and ratio. We can simplify that to discrete (nominal, ordinal) and
-continuous (interval, ratio). Are the phenomena we study discreet or
-continuous?
+and ratio. It is tempting to reduce this further to discrete
+(nominal, ordinal) and continuous (interval, ratio), although
+a count variable has a bit of both.  Are the phenomena we study
+discreet or continuous?
 
 We think of our phenomenon as $Z(s)$, property $Z$ is measured on object
 $s_i$ or at location $s$.  For making progress, we need to
@@ -40,22 +43,22 @@ In space-time we have for instance:
 We often associate
 
 * ***vector data*** with _spatially_ discrete phenomena ("features")
-* ***raster data*** with _spatially_ continuous phenomena (fields, coverages)
+* ***raster data*** with _spatially_ continuous phenomena ("fields", coverages)
 
-but this is often not right, e.g.  POINTs can
+but this is always the case: e.g. POINTs can reflect
 
-* reflect locations of things (trees, persons, cars)
-* locations for _measurements_ of spatially continuous phenomena (air temperature, air quality)
+* locations of things (trees, persons, cars)
+* locations for _measurements_ of spatially continuous phenomena (air temperature, air quality),
 
-LINESTRINGs can
+LINESTRINGs can reflect
 
-* reflect roads, railways or borders
-* reflect contour lines, which are discretely sampled representations of a spatially continuous elevation
+* roads, railways or borders
+* contour lines with constant values of spatially continuous elevation
 
-POLYGONs can
+and POLYGONs can reflect
 
-* reflect administrative regions, voting districts or forest stands
-* reflect the boundaries of of a spatially continuous discrete variable like land use or soil type
+* administrative regions, voting districts or forest stands
+* the boundaries of of a spatially continuous discrete variable like land use or soil type
 
 Linestring and polygon geometries are collections of points, and attributes associated with the geometry can be
 associated either with
@@ -75,6 +78,34 @@ of your attribute $Z$, but also whether it is spatially continuous
 or discrete ($s$). If it is discrete, counting, sums and spatial
 densities make sense, if it is continuous averaging and interpolation
 (prediction over continuous space) make sense.
+
+```{r}
+library(sf)
+(pol = st_polygon(list(rbind(c(0,0), c(2,0), c(2,2), c(0,2), c(0,0)))))
+(point = st_point(c(1,1)))
+st_intersects(point, pol)
+```
+Now suppose we know two properties of the polygon: total population and
+land use:
+```{r}
+(pol.sf = st_sf(population = 5000, land_use = "urban", geom = st_sfc(pol)))
+```
+If we now intersect `point` with `pol.sf`, should it retain the associated
+attributes?
+```{r}
+st_intersection(pol.sf, point)
+```
+How do we get rid of this warning? By setting the attribute-geometry relationsip (agr):
+
+```{r}
+st_agr(pol.sf) = c(population = "aggregate", land_use = "constant")
+st_intersection(pol.sf["land_use"], point)
+```
+No warning!
+```{r}
+st_intersection(pol.sf["population"], point)
+```
+Warning justified: maybe this should be an error, `population` be returned `NA`.
 
 # Tidy data?
 
@@ -192,6 +223,37 @@ See [hurricanes.Rmd](https://github.com/edzer/OGH23/blob/main/hurdat.Rmd), [outp
 ## OD
 
 See example in SDS: https://r-spatial.org/book/07-Introsf.html#sec-oddc
+
+## `nc`: a categorical dimension
+
+```{r}
+library(sf)
+nc = read_sf(system.file("gpkg/nc.gpkg", package="sf"))
+m = st_set_geometry(nc, NULL)
+n = as.matrix(m[c("BIR74", "SID74", "NWBIR74", "BIR79", "SID79", "NWBIR79")]) # 100 x 6
+dim(n) = c(county = 100, var = 3, year = 2) # 100 x 3 x 2
+dimnames(n) = list(county = nc$NAME, var = c("BIR", "SID", "NWBIR"), year = c(1974, 1979))
+library(stars)
+(st = st_as_stars(pop = n)) # without geometries
+foo <- st |> st_set_dimensions(1, st_geometry(nc)) # with
+foo
+st_bbox(foo)
+(x = st_as_sf(foo))
+frac = function(x) x[2] / x[1]
+frac2 = function(x) c(sidsr = x[2] / x[1], nwbr = x[3] / x[1])
+frac2an = function(x) c(x[2] / x[1], x[3] / x[1])
+st_apply(foo, c(1,3), frac)
+st_apply(foo, c(1,3), frac2)
+st_apply(foo, c(1,3), frac2an)
+library(abind)
+aperm(st_apply(foo, c(1,3), frac2), c("county", "year", "frac2"))
+
+split(foo, 2)
+split(foo, 3)
+
+# subset vector cube:
+foo[nc[1]]
+```
 
 # Vector data cubes from raster data cubes
 

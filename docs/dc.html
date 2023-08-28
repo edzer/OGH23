@@ -1511,7 +1511,8 @@ div.tocify {
 
 <div id="phenomena-spatially-discreet-or-continuous" class="section level1">
 <h1>Phenomena: spatially discreet or continuous?</h1>
-<p><a href="https://www.science.org/doi/10.1126/science.103.2684.677">Stevens’ 1946 “On the Theory of Scales of Measurement”</a> says there are four measurement scales: nominal, ordinal, interval and ratio. We can simplify that to discrete (nominal, ordinal) and continuous (interval, ratio). Are the phenomena we study discreet or continuous?</p>
+<p>A bit of theory.</p>
+<p><a href="https://www.science.org/doi/10.1126/science.103.2684.677">Stevens’ 1946 “On the Theory of Scales of Measurement”</a> says there are four measurement scales: nominal, ordinal, interval and ratio. It is tempting to reduce this further to discrete (nominal, ordinal) and continuous (interval, ratio), although a count variable has a bit of both. Are the phenomena we study discreet or continuous?</p>
 <p>We think of our phenomenon as <span class="math inline">\(Z(s)\)</span>, property <span class="math inline">\(Z\)</span> is measured on object <span class="math inline">\(s_i\)</span> or at location <span class="math inline">\(s\)</span>. For making progress, we need to distinguish here whether we talk about</p>
 <ul>
 <li>(non-spatial) properties of objects or locations: <span class="math inline">\(Z\)</span>
@@ -1530,22 +1531,22 @@ div.tocify {
 <p>We often associate</p>
 <ul>
 <li><strong><em>vector data</em></strong> with <em>spatially</em> discrete phenomena (“features”)</li>
-<li><strong><em>raster data</em></strong> with <em>spatially</em> continuous phenomena (fields, coverages)</li>
+<li><strong><em>raster data</em></strong> with <em>spatially</em> continuous phenomena (“fields”, coverages)</li>
 </ul>
-<p>but this is often not right, e.g. POINTs can</p>
+<p>but this is always the case: e.g. POINTs can reflect</p>
 <ul>
-<li>reflect locations of things (trees, persons, cars)</li>
-<li>locations for <em>measurements</em> of spatially continuous phenomena (air temperature, air quality)</li>
+<li>locations of things (trees, persons, cars)</li>
+<li>locations for <em>measurements</em> of spatially continuous phenomena (air temperature, air quality),</li>
 </ul>
-<p>LINESTRINGs can</p>
+<p>LINESTRINGs can reflect</p>
 <ul>
-<li>reflect roads, railways or borders</li>
-<li>reflect contour lines, which are discretely sampled representations of a spatially continuous elevation</li>
+<li>roads, railways or borders</li>
+<li>contour lines with constant values of spatially continuous elevation</li>
 </ul>
-<p>POLYGONs can</p>
+<p>and POLYGONs can reflect</p>
 <ul>
-<li>reflect administrative regions, voting districts or forest stands</li>
-<li>reflect the boundaries of of a spatially continuous discrete variable like land use or soil type</li>
+<li>administrative regions, voting districts or forest stands</li>
+<li>the boundaries of of a spatially continuous discrete variable like land use or soil type</li>
 </ul>
 <p>Linestring and polygon geometries are collections of points, and attributes associated with the geometry can be associated either with</p>
 <ul>
@@ -1554,6 +1555,58 @@ div.tocify {
 </ul>
 <p>We say for the first relation that the attribute has <em>block support</em>, and for the second that it has <em>point support</em>, following the geostatistical literature. <a href="https://r-spatial.org/book/05-Attributes.html">Further reading</a>.</p>
 <p>Getting this wrong, e.g. when downscaling polygons, may be a source of gross error in subsequent analysis. Before you analyse data, it makes a lot of sense to not only consider the measurement scale of your attribute <span class="math inline">\(Z\)</span>, but also whether it is spatially continuous or discrete (<span class="math inline">\(s\)</span>). If it is discrete, counting, sums and spatial densities make sense, if it is continuous averaging and interpolation (prediction over continuous space) make sense.</p>
+<pre class="r"><code>library(sf)</code></pre>
+<pre><code>## Linking to GEOS 3.11.1, GDAL 3.6.4, PROJ 9.1.1; sf_use_s2() is TRUE</code></pre>
+<pre class="r"><code>(pol = st_polygon(list(rbind(c(0,0), c(2,0), c(2,2), c(0,2), c(0,0)))))</code></pre>
+<pre><code>## POLYGON ((0 0, 2 0, 2 2, 0 2, 0 0))</code></pre>
+<pre class="r"><code>(point = st_point(c(1,1)))</code></pre>
+<pre><code>## POINT (1 1)</code></pre>
+<pre class="r"><code>st_intersects(point, pol)</code></pre>
+<pre><code>## Sparse geometry binary predicate list of length 1, where the predicate
+## was `intersects&#39;
+##  1: 1</code></pre>
+<p>Now suppose we know two properties of the polygon: total population and land use:</p>
+<pre class="r"><code>(pol.sf = st_sf(population = 5000, land_use = &quot;urban&quot;, geom = st_sfc(pol)))</code></pre>
+<pre><code>## Simple feature collection with 1 feature and 2 fields
+## Geometry type: POLYGON
+## Dimension:     XY
+## Bounding box:  xmin: 0 ymin: 0 xmax: 2 ymax: 2
+## CRS:           NA
+##   population land_use                           geom
+## 1       5000    urban POLYGON ((0 0, 2 0, 2 2, 0 ...</code></pre>
+<p>If we now intersect <code>point</code> with <code>pol.sf</code>, should it retain the associated attributes?</p>
+<pre class="r"><code>st_intersection(pol.sf, point)</code></pre>
+<pre><code>## Warning: attribute variables are assumed to be spatially constant throughout
+## all geometries</code></pre>
+<pre><code>## Simple feature collection with 1 feature and 2 fields
+## Geometry type: POINT
+## Dimension:     XY
+## Bounding box:  xmin: 1 ymin: 1 xmax: 1 ymax: 1
+## CRS:           NA
+##   population land_use        geom
+## 1       5000    urban POINT (1 1)</code></pre>
+<p>How do we get rid of this warning? By setting the attribute-geometry relationsip (agr):</p>
+<pre class="r"><code>st_agr(pol.sf) = c(population = &quot;aggregate&quot;, land_use = &quot;constant&quot;)
+st_intersection(pol.sf[&quot;land_use&quot;], point)</code></pre>
+<pre><code>## Simple feature collection with 1 feature and 1 field
+## Geometry type: POINT
+## Dimension:     XY
+## Bounding box:  xmin: 1 ymin: 1 xmax: 1 ymax: 1
+## CRS:           NA
+##   land_use        geom
+## 1    urban POINT (1 1)</code></pre>
+<p>No warning!</p>
+<pre class="r"><code>st_intersection(pol.sf[&quot;population&quot;], point)</code></pre>
+<pre><code>## Warning: attribute variables are assumed to be spatially constant throughout
+## all geometries</code></pre>
+<pre><code>## Simple feature collection with 1 feature and 1 field
+## Geometry type: POINT
+## Dimension:     XY
+## Bounding box:  xmin: 1 ymin: 1 xmax: 1 ymax: 1
+## CRS:           NA
+##   population        geom
+## 1       5000 POINT (1 1)</code></pre>
+<p>Warning justified: maybe this should be an error, <code>population</code> be returned <code>NA</code>.</p>
 </div>
 <div id="tidy-data" class="section level1">
 <h1>Tidy data?</h1>
@@ -1576,8 +1629,6 @@ div.tocify {
 <p>For raster data, we can, obviously, put things in tables, in different ways</p>
 <pre class="r"><code>library(stars)</code></pre>
 <pre><code>## Loading required package: abind</code></pre>
-<pre><code>## Loading required package: sf</code></pre>
-<pre><code>## Linking to GEOS 3.11.1, GDAL 3.6.4, PROJ 9.1.1; sf_use_s2() is TRUE</code></pre>
 <pre class="r"><code>L7_ETMs |&gt; as.data.frame() |&gt; head()</code></pre>
 <pre><code>##          x       y band L7_ETMs
 ## 1 288790.5 9120747    1      69
@@ -1761,6 +1812,173 @@ plot(nh, border = &#39;green&#39;, add = TRUE)</code></pre>
 <div id="od" class="section level2">
 <h2>OD</h2>
 <p>See example in SDS: <a href="https://r-spatial.org/book/07-Introsf.html#sec-oddc" class="uri">https://r-spatial.org/book/07-Introsf.html#sec-oddc</a></p>
+</div>
+<div id="nc-a-categorical-dimension" class="section level2">
+<h2><code>nc</code>: a categorical dimension</h2>
+<pre class="r"><code>library(sf)
+nc = read_sf(system.file(&quot;gpkg/nc.gpkg&quot;, package=&quot;sf&quot;))
+m = st_set_geometry(nc, NULL)
+n = as.matrix(m[c(&quot;BIR74&quot;, &quot;SID74&quot;, &quot;NWBIR74&quot;, &quot;BIR79&quot;, &quot;SID79&quot;, &quot;NWBIR79&quot;)]) # 100 x 6
+dim(n) = c(county = 100, var = 3, year = 2) # 100 x 3 x 2
+dimnames(n) = list(county = nc$NAME, var = c(&quot;BIR&quot;, &quot;SID&quot;, &quot;NWBIR&quot;), year = c(1974, 1979))
+library(stars)
+(st = st_as_stars(pop = n)) # without geometries</code></pre>
+<pre><code>## stars object with 3 dimensions and 1 attribute
+## attribute(s):
+##      Min. 1st Qu. Median     Mean 3rd Qu.  Max.
+## pop     0       8    538 1657.032    1784 30757
+## dimension(s):
+##        from  to              values
+## county    1 100  Ashe,...,Brunswick
+## var       1   3 BIR  , SID  , NWBIR
+## year      1   2          1974, 1979</code></pre>
+<pre class="r"><code>foo &lt;- st |&gt; st_set_dimensions(1, st_geometry(nc)) # with
+foo</code></pre>
+<pre><code>## stars object with 3 dimensions and 1 attribute
+## attribute(s):
+##      Min. 1st Qu. Median     Mean 3rd Qu.  Max.
+## pop     0       8    538 1657.032    1784 30757
+## dimension(s):
+##        from  to refsys point
+## county    1 100  NAD27 FALSE
+## var       1   3     NA    NA
+## year      1   2     NA    NA
+##                                                               values
+## county MULTIPOLYGON (((-81.47276...,...,MULTIPOLYGON (((-78.65572...
+## var                                              BIR  , SID  , NWBIR
+## year                                                      1974, 1979</code></pre>
+<pre class="r"><code>st_bbox(foo)</code></pre>
+<pre><code>##      xmin      ymin      xmax      ymax 
+## -84.32385  33.88199 -75.45698  36.58965</code></pre>
+<pre class="r"><code>(x = st_as_sf(foo))</code></pre>
+<pre><code>## Simple feature collection with 100 features and 6 fields
+## Geometry type: MULTIPOLYGON
+## Dimension:     XY
+## Bounding box:  xmin: -84.32385 ymin: 33.88199 xmax: -75.45698 ymax: 36.58965
+## Geodetic CRS:  NAD27
+## First 10 features:
+##    BIR.1974 SID.1974 NWBIR.1974 BIR.1979 SID.1979 NWBIR.1979
+## 1      1091        1         10     1364        0         19
+## 2       487        0         10      542        3         12
+## 3      3188        5        208     3616        6        260
+## 4       508        1        123      830        2        145
+## 5      1421        9       1066     1606        3       1197
+## 6      1452        7        954     1838        5       1237
+## 7       286        0        115      350        2        139
+## 8       420        0        254      594        2        371
+## 9       968        4        748     1190        2        844
+## 10     1612        1        160     2038        5        176
+##                            county
+## 1  MULTIPOLYGON (((-81.47276 3...
+## 2  MULTIPOLYGON (((-81.23989 3...
+## 3  MULTIPOLYGON (((-80.45634 3...
+## 4  MULTIPOLYGON (((-76.00897 3...
+## 5  MULTIPOLYGON (((-77.21767 3...
+## 6  MULTIPOLYGON (((-76.74506 3...
+## 7  MULTIPOLYGON (((-76.00897 3...
+## 8  MULTIPOLYGON (((-76.56251 3...
+## 9  MULTIPOLYGON (((-78.30876 3...
+## 10 MULTIPOLYGON (((-80.02567 3...</code></pre>
+<pre class="r"><code>frac = function(x) x[2] / x[1]
+frac2 = function(x) c(sidsr = x[2] / x[1], nwbr = x[3] / x[1])
+frac2an = function(x) c(x[2] / x[1], x[3] / x[1])
+st_apply(foo, c(1,3), frac)</code></pre>
+<pre><code>## stars object with 2 dimensions and 1 attribute
+## attribute(s):
+##       Min.     1st Qu.      Median        Mean     3rd Qu.       Max.
+## frac     0 0.001197874 0.001930504 0.002042241 0.002599348 0.00955414
+## dimension(s):
+##        from  to refsys point
+## county    1 100  NAD27 FALSE
+## year      1   2     NA    NA
+##                                                               values
+## county MULTIPOLYGON (((-81.47276...,...,MULTIPOLYGON (((-78.65572...
+## year                                                      1974, 1979</code></pre>
+<pre class="r"><code>st_apply(foo, c(1,3), frac2)</code></pre>
+<pre><code>## stars object with 3 dimensions and 1 attribute
+## attribute(s):
+##      Min.     1st Qu.      Median      Mean   3rd Qu.      Max.
+## pop     0 0.001923331 0.005119673 0.1567576 0.3065298 0.7727273
+## dimension(s):
+##        from  to refsys point
+## frac2     1   2     NA    NA
+## county    1 100  NAD27 FALSE
+## year      1   2     NA    NA
+##                                                               values
+## frac2                                                   sidsr, nwbr 
+## county MULTIPOLYGON (((-81.47276...,...,MULTIPOLYGON (((-78.65572...
+## year                                                      1974, 1979</code></pre>
+<pre class="r"><code>st_apply(foo, c(1,3), frac2an)</code></pre>
+<pre><code>## stars object with 3 dimensions and 1 attribute
+## attribute(s):
+##      Min.     1st Qu.      Median      Mean   3rd Qu.      Max.
+## pop     0 0.001923331 0.005119673 0.1567576 0.3065298 0.7727273
+## dimension(s):
+##         from  to refsys point
+## frac2an    1   2     NA    NA
+## county     1 100  NAD27 FALSE
+## year       1   2     NA    NA
+##                                                                values
+## frac2an                                                          NULL
+## county  MULTIPOLYGON (((-81.47276...,...,MULTIPOLYGON (((-78.65572...
+## year                                                       1974, 1979</code></pre>
+<pre class="r"><code>library(abind)
+aperm(st_apply(foo, c(1,3), frac2), c(&quot;county&quot;, &quot;year&quot;, &quot;frac2&quot;))</code></pre>
+<pre><code>## stars object with 3 dimensions and 1 attribute
+## attribute(s):
+##      Min.     1st Qu.      Median      Mean   3rd Qu.      Max.
+## pop     0 0.001923331 0.005119673 0.1567576 0.3065298 0.7727273
+## dimension(s):
+##        from  to refsys point
+## county    1 100  NAD27 FALSE
+## year      1   2     NA    NA
+## frac2     1   2     NA    NA
+##                                                               values
+## county MULTIPOLYGON (((-81.47276...,...,MULTIPOLYGON (((-78.65572...
+## year                                                      1974, 1979
+## frac2                                                   sidsr, nwbr</code></pre>
+<pre class="r"><code>split(foo, 2)</code></pre>
+<pre><code>## stars object with 2 dimensions and 3 attributes
+## attribute(s):
+##        Min. 1st Qu. Median     Mean 3rd Qu.  Max.
+## BIR     248 1176.75   2265 3761.770 4450.75 30757
+## SID       0    2.00      5    7.515    9.00    57
+## NWBIR     1  206.00    742 1201.810 1315.75 11631
+## dimension(s):
+##        from  to refsys point
+## county    1 100  NAD27 FALSE
+## year      1   2     NA    NA
+##                                                               values
+## county MULTIPOLYGON (((-81.47276...,...,MULTIPOLYGON (((-78.65572...
+## year                                                      1974, 1979</code></pre>
+<pre class="r"><code>split(foo, 3)</code></pre>
+<pre><code>## stars object with 2 dimensions and 2 attributes
+## attribute(s):
+##       Min. 1st Qu. Median     Mean 3rd Qu.  Max.
+## 1974     0       8  501.5 1452.367 1580.50 21588
+## 1979     0       9  614.0 1861.697 2040.25 30757
+## dimension(s):
+##        from  to refsys point
+## county    1 100  NAD27 FALSE
+## var       1   3     NA    NA
+##                                                               values
+## county MULTIPOLYGON (((-81.47276...,...,MULTIPOLYGON (((-78.65572...
+## var                                              BIR  , SID  , NWBIR</code></pre>
+<pre class="r"><code># subset vector cube:
+foo[nc[1]]</code></pre>
+<pre><code>## stars object with 3 dimensions and 1 attribute
+## attribute(s):
+##      Min. 1st Qu. Median     Mean 3rd Qu.  Max.
+## pop     0       8    538 1657.032    1784 30757
+## dimension(s):
+##        from  to refsys point
+## county    1 100  NAD27 FALSE
+## var       1   3     NA    NA
+## year      1   2     NA    NA
+##                                                               values
+## county MULTIPOLYGON (((-81.47276...,...,MULTIPOLYGON (((-78.65572...
+## var                                              BIR  , SID  , NWBIR
+## year                                                      1974, 1979</code></pre>
 </div>
 </div>
 <div id="vector-data-cubes-from-raster-data-cubes" class="section level1">
