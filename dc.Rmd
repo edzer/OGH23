@@ -187,7 +187,7 @@ approach to model these data statistically.
 
 ## Hurricanes
 
-See [hurricanes.Rmd](https://github.com/edzer/OGH23/hurdat.Rmd), [output](hurdat.html)
+See [hurricanes.Rmd](https://github.com/edzer/OGH23/blob/main/hurdat.Rmd), [output](hurdat.html)
 
 ## OD
 

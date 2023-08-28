@@ -1,5 +1,5 @@
 ---
-title: "hur"
+title: "hurricane data"
 output: html_document
 ---
 
@@ -7,7 +7,9 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+
+We will use a hurricane dataset and aggretate it to a spatiotemporal datacube.
+
 Read the entire dataset in character strings, split by fields
 ```{r}
 r0 = readLines("hurdat2-1851-2017-050118.txt")
@@ -60,7 +62,7 @@ sf$year_grp = cut(sf$year, quantile(sf$year, (0:10)/10),
 ggplot() + geom_sf(data = sf) + facet_wrap(~year_grp)
 ```
 
-# use stars for rectilinear grid
+# use stars for rectilinear grid with equal-area grid cells
 ```{r}
 library(stars)
 x = c(seq(-120, 60, 10), 70.1)
