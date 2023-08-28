@@ -169,7 +169,8 @@ plot(fmd.sf, pch = 16, reset = FALSE, extent = nh, breaks = "quantile")
 plot(nh, add = TRUE)
 ```
 
-Create an empty datacube covering the space-time area:
+Create an empty datacube covering the space-time area, and count the
+number of cases in each grid cell:
 ```{r}
 library(stars)
 st = st_as_stars(nh, nx = 10, ny = 10)
@@ -192,17 +193,19 @@ See [hurricanes.Rmd](https://github.com/edzer/OGH23/hurdat.Rmd), [output](hurdat
 
 See example in SDS: https://r-spatial.org/book/07-Introsf.html#sec-oddc
 
-
 # Vector data cubes from raster data cubes
 
 Consider the following temperature reanalysis data, taken from [this file](https://psl.noaa.gov/repository/entry/show/PSD+Climate+Data+Repository/Public/PSD+Datasets/PSD+Gridded+Datasets/ncep.reanalysis2.derived/gaussian_grid/skt.sfc.mon.mean.nc?entryid=synth%3Ae570c8f9-ec09-4e89-93b4-babd5651e7a9%3AL25jZXAucmVhbmFseXNpczIuZGVyaXZlZC9nYXVzc2lhbl9ncmlkL3NrdC5zZmMubW9uLm1lYW4ubmM%3D&output=default.html).
 
-We 
+We can read this NetCDF file using either of two ways:
 ```{r}
 library(stars)
 read_stars('skt.sfc.mon.mean.nc') # GDAL RasterLayer
 read_mdim('skt.sfc.mon.mean.nc')  # GDAL Multidimensional Array API
 ```
+
+We will continue with the first in order to have a regular grid; another approach
+would have been to resample/warp the rectilinear grid.
 
 Sampling this at two locations:
 ```{r}
