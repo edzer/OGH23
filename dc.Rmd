@@ -1,4 +1,4 @@
-=--
+---
 title: "Raster and vector data cubes in R"
 author: "Edzer Pebesma, OpenGeoHub Summer School 2023"
 date: "Aug 29, 2023"
