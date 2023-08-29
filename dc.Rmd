@@ -256,9 +256,14 @@ Consider the following temperature reanalysis data, taken from [this file](https
 
 We can read this NetCDF file using either of two ways:
 ```{r}
+u = "https://psl.noaa.gov/repository/entry/get/skt.sfc.mon.mean.nc?entryid=synth%3Ae570c8f9-ec09-4e89-93b4-babd5651e7a9%3AL25jZXAucmVhbmFseXNpczIuZGVyaXZlZC9nYXVzc2lhbl9ncmlkL3NrdC5zZmMubW9uLm1lYW4ubmM%3D"
+f = 'skt.sfc.mon.mean.nc'
+if (!file.exists(f)) {
+  download.file(u, f)
+}
 library(stars)
-read_stars('skt.sfc.mon.mean.nc') # GDAL RasterLayer
-read_mdim('skt.sfc.mon.mean.nc')  # GDAL Multidimensional Array API
+read_stars(f) # GDAL RasterLayer
+read_mdim(f)  # GDAL Multidimensional Array API
 ```
 
 We will continue with the first in order to have a regular grid; another approach
