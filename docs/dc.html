@@ -846,8 +846,13 @@ foo[nc[1]]</code></pre>
 <h1>Vector data cubes from raster data cubes</h1>
 <p>Consider the following temperature reanalysis data, taken from <a href="https://psl.noaa.gov/repository/entry/show/PSD+Climate+Data+Repository/Public/PSD+Datasets/PSD+Gridded+Datasets/ncep.reanalysis2.derived/gaussian_grid/skt.sfc.mon.mean.nc?entryid=synth%3Ae570c8f9-ec09-4e89-93b4-babd5651e7a9%3AL25jZXAucmVhbmFseXNpczIuZGVyaXZlZC9nYXVzc2lhbl9ncmlkL3NrdC5zZmMubW9uLm1lYW4ubmM%3D&amp;output=default.html">this file</a>.</p>
 <p>We can read this NetCDF file using either of two ways:</p>
-<pre class="r"><code>library(stars)
-read_stars(&#39;skt.sfc.mon.mean.nc&#39;) # GDAL RasterLayer</code></pre>
+<pre class="r"><code>u = &quot;https://psl.noaa.gov/repository/entry/get/skt.sfc.mon.mean.nc?entryid=synth%3Ae570c8f9-ec09-4e89-93b4-babd5651e7a9%3AL25jZXAucmVhbmFseXNpczIuZGVyaXZlZC9nYXVzc2lhbl9ncmlkL3NrdC5zZmMubW9uLm1lYW4ubmM%3D&quot;
+f = &#39;skt.sfc.mon.mean.nc&#39;
+if (!file.exists(f)) {
+  download.file(u, f)
+}
+library(stars)
+read_stars(f) # GDAL RasterLayer</code></pre>
 <pre><code>## Warning in CPL_get_metadata(file, NA_character_, options): GDAL Message 1:
 ## Latitude grid not spaced evenly.  Setting projection for grid spacing is within
 ## 0.1 degrees threshold.</code></pre>
@@ -863,7 +868,7 @@ read_stars(&#39;skt.sfc.mon.mean.nc&#39;) # GDAL RasterLayer</code></pre>
 ## x       1 192 -0.9375  1.875      NA                      NULL [x]
 ## y       1  94   89.49 -1.904      NA                      NULL [y]
 ## time    1 535      NA     NA POSIXct 1979-01-01,...,2023-07-01</code></pre>
-<pre class="r"><code>read_mdim(&#39;skt.sfc.mon.mean.nc&#39;)  # GDAL Multidimensional Array API</code></pre>
+<pre class="r"><code>read_mdim(f)  # GDAL Multidimensional Array API</code></pre>
 <pre><code>## stars object with 3 dimensions and 1 attribute
 ## attribute(s), summary of first 1e+05 cells:
 ##           Min. 1st Qu. Median     Mean 3rd Qu.   Max.
