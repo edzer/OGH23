@@ -1,7 +1,7 @@
 ---
 title: "Raster and vector data cubes in R"
 author: "Edzer Pebesma"
-date: "Aug 23, 2023"
+date: "Aug 29, 2023"
 output:
   html_document:
     toc: true
