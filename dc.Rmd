@@ -30,9 +30,9 @@ distinguish here whether we talk about
 
 In space-time we have for instance:
 
-    * temperature is continuous in space, time and property
-    * being infected with disease $x$ is discrete in space (e.g., a person) but continuous in time.
-    * a remote sensing image is (semi-) continuous in space $s$ and value $Z$ (energy) but the _observation_ is discrete in time (snapshot); the energy phenomena is continuous in time
+* temperature is continuous in space, time and property
+* being infected with disease $x$ is discrete in space (e.g., a person) but continuous in time.
+* a remote sensing image is (semi-) continuous in space $s$ and value $Z$ (energy) but the _observation_ is discrete in time (snapshot); the energy phenomena is continuous in time
 
 We often associate
 
