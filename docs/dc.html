@@ -380,7 +380,10 @@ pre code {
 <li>soil type or land use type is continuous in space <span class="math inline">\(s\)</span>, but discrete in value <span class="math inline">\(Z\)</span></li>
 </ul></li>
 </ul>
-<p>In space-time we have for instance: * temperature is continuous in space, time and property * being infected with disease <span class="math inline">\(x\)</span> is discrete in space (e.g., a person) but continuous in time. * a remote sensing image is (semi-) continuous in space <span class="math inline">\(s\)</span> and value <span class="math inline">\(Z\)</span> (energy) but the <em>observation</em> is discrete in time (snapshot); the energy phenomena is continuous in time</p>
+<p>In space-time we have for instance:</p>
+<pre><code>* temperature is continuous in space, time and property
+* being infected with disease $x$ is discrete in space (e.g., a person) but continuous in time.
+* a remote sensing image is (semi-) continuous in space $s$ and value $Z$ (energy) but the _observation_ is discrete in time (snapshot); the energy phenomena is continuous in time</code></pre>
 <p>We often associate</p>
 <ul>
 <li><strong><em>vector data</em></strong> with <em>spatially</em> discrete phenomena (“features”)</li>
@@ -547,7 +550,12 @@ st_intersection(pol.sf[&quot;land_use&quot;], point)</code></pre>
 </div>
 <div id="whywhen-would-you-stick-to-arrays" class="section level2">
 <h2>Why/when would you stick to arrays?</h2>
-<p>If you use arrays, you have the advantage of: * guarantee of complete data: “empty” fields are filled with 0 (count) or NA (continuous, or nominal) * there is no need to take care of completeness, data are complete by construction * in-memory arrays have a continous memory layout, hence indexes are for free: we “know” where each data value is (“<a href="https://r-spatial.org/book/06-Cubes.html#regular-dimensions-gdals-geotransform">geotransform</a>”) * for larger datasets: arrays form an easy and useful abstraction * array <a href="https://r-spatial.org/book/06-Cubes.html#sec-dcoperations"><em>operations</em></a> are a powerful and comprehensive means to design and communicate analysis, and are much harder to carry out with tables</p>
+<p>If you use arrays, you have the advantage of:</p>
+<pre><code>* guarantee of complete data: &quot;empty&quot; fields are filled with 0 (count) or NA (continuous, or nominal)
+* there is no need to take care of completeness, data are complete by construction
+* in-memory arrays have a continous memory layout, hence indexes are for free: we &quot;know&quot; where each data value is (&quot;[geotransform](https://r-spatial.org/book/06-Cubes.html#regular-dimensions-gdals-geotransform)&quot;)
+* for larger datasets: arrays form an easy and useful abstraction
+* array [_operations_](https://r-spatial.org/book/06-Cubes.html#sec-dcoperations) are a powerful and comprehensive means to design and communicate analysis, and are much harder to carry out with tables</code></pre>
 <pre class="r"><code>stars:::get_geotransform(L7_ETMs)</code></pre>
 <pre><code>## [1]  288776.3      28.5       0.0 9120760.8       0.0     -28.5</code></pre>
 </div>

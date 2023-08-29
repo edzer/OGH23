@@ -29,6 +29,7 @@ distinguish here whether we talk about
     * soil type or land use type is continuous in space $s$, but discrete in value $Z$
 
 In space-time we have for instance:
+
     * temperature is continuous in space, time and property
     * being infected with disease $x$ is discrete in space (e.g., a person) but continuous in time.
     * a remote sensing image is (semi-) continuous in space $s$ and value $Z$ (energy) but the _observation_ is discrete in time (snapshot); the energy phenomena is continuous in time
@@ -135,6 +136,7 @@ tables; not vice versa. Why then would you work with arrays?
 ## Why/when would you stick to arrays?
 
 If you use arrays, you have the advantage of:
+
 	* guarantee of complete data: "empty" fields are filled with 0 (count) or NA (continuous, or nominal)
     * there is no need to take care of completeness, data are complete by construction
 	* in-memory arrays have a continous memory layout, hence indexes are for free: we "know" where each data value is ("[geotransform](https://r-spatial.org/book/06-Cubes.html#regular-dimensions-gdals-geotransform)")
