@@ -4,6 +4,10 @@ author: "Edzer Pebesma"
 date: "Aug 23, 2023"
 ---
 
+```{r echo=FALSE}
+EVAL=TRUE
+```
+
 # openEO is an API
 
 Well, yes, and along with that 
@@ -43,6 +47,9 @@ From https://r.geocompx.org/gis.html?q=openeo#openeo
 plots_json <- geojson_read("plots.geojson")
 ```
 
+::: panel-tabset
+
+#### R
 ```{r echo=FALSE, message=FALSE}
 if (file.exists("con.RData"))
 	load("con.RData")
@@ -63,7 +70,7 @@ save(list = "con", file = "con.RData")
 
 User support platform: https://discuss.eodc.eu/c/openeo-platform/5
 
-```{r}
+```{r eval=EVAL}
 p = processes() # load available processes
 collections = list_collections() # load available collections
 formats = list_file_formats() # load available output formats
@@ -98,6 +105,61 @@ f = compute_result(graph = result, output_file = tempfile(fileext = ".tif"))
 library(stars)
 read_stars(f) |> plot()
 ```
+
+#### Python
+
+```{python eval=FALSE}
+import openeo
+
+#conect to backennd, uncomment to authenticate using oidc
+connection = openeo.connect("openeo.cloud")#.authenticate_oidc()
+
+# Get all collection ids
+print(connection.list_collection_ids())
+
+# print all processes
+#print(connection.list_processes())
+
+# Load Sentinel-2 collection
+datacube = connection.load_collection(
+        "SENTINEL2_L2A",
+        spatial_extent={"west": 7.5, "south": 50.1, "east": 7.7, "north": 50.3},
+        temporal_extent=["2021-01-01", "2021-01-31"],
+        bands=["B04", "B08"]
+        )
+
+# Compute NDVI vegetation index
+#datacube = datacube.ndvi(nir = "B08", red = "B04", target_band = "NDVI")
+datacube = datacube.process(
+        process_id="ndvi", 
+        arguments={
+            "data": datacube, 
+            "nir": "B08", 
+            "red": "B04"}
+        )
+
+# Compute maximum over time
+datacube = datacube.reduce_dimension(
+        reducer="max",
+        dimension = "t"
+        )
+
+# Export as GeoTIFF
+result = datacube.save_result("GTiff")
+
+# login:
+connection.authenticate_oidc()
+
+# Execute processes
+# Creating a new job at the back-end by sending the datacube information.
+job = result.create_job()
+
+# Starts the job and waits until it finished to download the result.
+job.start_and_wait()
+job.get_results().download_files(".")
+```
+
+:::
 
 # A larger example, using Copernicus Data Space Ecosystem
 
@@ -347,15 +409,15 @@ change.detection = 'function(x) {
   if (all(is.na(kndvi))) {
     return(c(NA,NA))
   }
-    kndvi_ts = ts(kndvi, start = c(2016, 1), frequency = 12)
-    library(bfast)
-    tryCatch({
-        result = bfastmonitor(kndvi_ts, start = c(2020,1), level = 0.01)
-        return(c(result$breakpoint, result$magnitude))
-      }, error = function(x) {
-        return(c(NA,NA))
-      })
-  }'
+  kndvi_ts = ts(kndvi, start = c(2016, 1), frequency = 12)
+  library(bfast)
+  tryCatch({
+      result = bfastmonitor(kndvi_ts, start = c(2020,1), level = 0.01)
+      return(c(result$breakpoint, result$magnitude))
+    }, error = function(x) {
+      return(c(NA,NA))
+    })
+}'
 
 # run udf
 datacube_udf = p$run_udf(data = datacube_filtered, udf = change.detection, names =  c("change_date", "change_magnitude"))
@@ -380,14 +442,9 @@ print("End of processes")
 library(stars)
 #r = read_mdim("change_detection.nc", proxy = TRUE)
 r = read_stars('NETCDF:"change_detection.nc":change_date')
-class(r[[1]]) = "Date"
-r["t"] = as.POSIXct(r[[1]])
-class(r$t) = c("POSIXct", "POSIXt")
-ra = range(r$t, na.rm = TRUE)
-br = seq(ra[1], ra[2], length.out = 10)
-plot(r["t"], breaks = br)
+plot(r, breaks = "equal", main = "time of change (decimal year)")
 
 m = read_stars('NETCDF:"change_detection.nc":change_magnitude')
-plot(m, breaks = "equal")
-plot(m)
+plot(m, breaks = "equal", main = "change magnitude (equal breaks)")
+plot(m, main = "change magnitude (quantile breaks)")
 ```
